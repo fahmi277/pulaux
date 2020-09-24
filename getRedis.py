@@ -5,7 +5,7 @@ import time
 redisClient = redis.StrictRedis(host='localhost',port=6379,db=0)
 
 blynkToken = "Z3IpYgan8qOuvPBJ9XGxa1i-nLcbA3th"
-url = 'http://119.18.158.238:3579/'+blynkToken
+url = 'http://119.18.158.237:3579/'+blynkToken
 
 
 def pushBlynk(virtualPin,data):
