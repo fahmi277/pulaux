@@ -1,0 +1,135 @@
+import asyncio
+import can
+import os
+import binascii
+from time import sleep
+idMsgVoltageCurr = [124045411, 124045410, 124045409, 124045408, 124045407, 124045406, 124045405, 124045404, 124045403, 124045402, 124045401, 124045400, 124045399, 124045398, 124045397, 124045396]
+idMsgMosfet = [123979875, 123979874, 123979873, 123979872, 123979871, 123979870, 123979869, 123979868, 123979867, 123979866, 123979865, 123979864, 123979863, 123979862, 123979861, 123979860]
+
+def conVoltAmp(dataIn):
+    byteVp1 = dataIn[4:6]
+    byteVp2 = dataIn[6:8]
+    byteAp1 = dataIn[8:10]
+    byteAp2 = dataIn[10:12]
+
+    outputData1 = int(f'0x{byteVp1}', 0)
+    outputData2 = int(f'0x{byteVp2}', 0)
+
+    outputData3 = int(f'0x{byteAp1}', 0)
+    outputData4 = int(f'0x{byteAp2}', 0)
+
+    factorv = 0
+    if outputData1 <= 100:
+        factorv = 0
+    elif outputData1 > 100:
+        factorv = 1
+
+    outputDataVoltage = 25700 - (outputData1+((outputData2-factorv)*256))
+
+    factora = 0
+    if outputData3 <= 100:
+        factora = 0
+    elif outputData3 > 100:
+        factora = 1
+
+    outputDataCurrent = 25700 - (outputData3+((outputData4-factora)*256))
+
+    return outputDataVoltage, outputDataCurrent
+
+# os.system('sudo ip link set can0 type can bitrate 250000')
+# os.system('sudo ifconfig can0 up')
+async def listen_sensor_arus(msg):
+    """Regular callback function. Can also be a coroutine."""
+    if msg.arbitration_id == 490784999:
+        print(f"{msg.data}\tini sensor_arus")
+        await asyncio.sleep(0.5)
+
+def handleVoltCurr(msg):
+    if msg.arbitration_id in idMsgVoltageCurr:
+        dock = idMsgVoltageCurr.index(msg.arbitration_id) + 1
+        hex_msg = binascii.hexlify(msg.data)
+        dataBattery = str(hex_msg.decode("utf-8"))
+        convData = conVoltAmp(dataBattery)
+        print(f'voltcurr:: dock: {dock} data: {convData}')
+#        await asyncio.sleep(0.1)
+        # red.hset('pack_volt', dock, convData[0])
+        # red.hset('pack_curr', dock, convData[1])
+
+def handleReadMosfetState(msg):
+    mos_state_definition = {
+        '53': {
+            'cmos' : 'ON',
+            'dmos' : 'OFF'
+        },
+        '42': {
+            'cmos' : 'OFF',
+            'dmos' : 'ON'
+        },
+        '31': {
+            'cmos' : 'ON',
+            'dmos' : 'ON'
+        },
+        '65': {
+            'cmos' : 'OFF',
+            'dmos' : 'OFF'
+        },
+    }
+    if msg.arbitration_id in idMsgMosfet:
+        dock = idMsgMosfet.index(msg.arbitration_id) + 1
+        hex_msg = binascii.hexlify(msg.data)
+        msg2data = str(hex_msg.decode("utf-8"))
+        mosfetdata = mos_state_definition.get(msg2data[:2])
+        
+
+async def listen_batre(msg):
+    if msg.arbitration_id != 490784999:
+        print(f"{msg.data}\tini battery")
+        await asyncio.sleep(1)
+
+async def main():
+    can0 = can.Bus('can0', bustype='socketcan_ctypes', receive_own_messages=False)
+    reader = can.AsyncBufferedReader()
+    logger = can.Logger('logfile.asc')
+
+    listeners = [
+#        listen_batre,  # Callback function
+        reader,         # AsyncBufferedReader() listener
+        logger,          # Regular Listener object
+        handleVoltCurr,
+        handleReadMosfetState
+#        listen_sensor_arus
+    ]
+    # listeners1 = [
+    #     ini_test,  # Callback function
+    #     reader,         # AsyncBufferedReader() listener
+    #     logger          # Regular Listener object
+    # ]
+    # Create Notifier with an explicit loop to use for scheduling of callbacks
+    loop = asyncio.get_event_loop()
+    # notifier1 = can.Notifier(can0, listeners1, loop=loop)
+    notifier = can.Notifier(can0, listeners, loop=loop)
+    # Start sending first message
+    # can0.send(can.Message(arbitration_id=0))
+
+    print('Bouncing 10 messages...')
+    for _ in range(100000):
+        # Wait for next message from AsyncBufferedReader
+        msg = await reader.get_message()
+        # Delay response
+        # await asyncio.sleep(0.1)
+        # msg.arbitration_id += 1
+        # can0.send(msg)
+    # Wait for last message to arrive
+    await reader.get_message()
+    print('Done!')
+
+    # Clean-up
+    notifier.stop()
+    # notifier1.stop()
+    can0.shutdown()
+
+# Get the default event loop
+loop = asyncio.get_event_loop()
+# Run until main coroutine finishes
+loop.run_until_complete(main())
+loop.close()
