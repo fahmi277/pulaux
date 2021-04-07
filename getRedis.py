@@ -4,8 +4,8 @@ import requests
 import time
 redisClient = redis.StrictRedis(host='localhost',port=6379,db=0)
 
-blynkToken = "Z3IpYgan8qOuvPBJ9XGxa1i-nLcbA3th"
-url = 'http://119.18.158.237:3579/'+blynkToken
+blynkToken = "rfncFfLn6BbD3FSm4Em4RZsPMXcGb5r7"
+url = 'http://iot.serangkota.go.id:8080/'+blynkToken
 
 
 def pushBlynk(virtualPin,data):
