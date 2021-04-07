@@ -8,11 +8,12 @@ import struct
 
 import requests
 
-token = "rHr9SwDdrlELjivrBytAcKyFKlo4o3Qw"
-ur4 = 'http://blynk-cloud.com/'+token+'/update/V0?value='
-ur5 = 'http://blynk-cloud.com/'+token+'/update/V1?value='
-ur6 = 'http://blynk-cloud.com/'+token+'/update/V2?value='
-ur7 = 'http://blynk-cloud.com/'+token+'/update/V3?value='
+blynkToken = "rfncFfLn6BbD3FSm4Em4RZsPMXcGb5r7"
+url = 'http://iot.serangkota.go.id:8080/'+blynkToken
+ur4 = 'http://iot.serangkota.go.id:8080/'+blynkToken+'/update/V0?value='
+ur5 = 'http://iot.serangkota.go.id:8080/'+blynkToken+'/update/V1?value='
+ur6 = 'http://iot.serangkota.go.id:8080/'+blynkToken+'/update/V2?value='
+ur7 = 'http://iot.serangkota.go.id:8080/'+blynkToken+'/update/V3?value='
 # http://blynk-cloud.com/auth_token/update/pin?value=value
 # import pyrebase
 # import redis
@@ -22,8 +23,8 @@ SERVER_HOST = "192.168.200.18"
 SERVER_PORT = 502
 address_currpack = 8448
 
-blynkToken = "Z3IpYgan8qOuvPBJ9XGxa1i-nLcbA3th"
-url = 'http://119.18.158.238:3579/'+blynkToken
+blynkToken = "rfncFfLn6BbD3FSm4Em4RZsPMXcGb5r7"
+url = 'http://iot.serangkota.go.id:8080/'+blynkToken
 
 
 def pushBlynk(virtualPin,data):
